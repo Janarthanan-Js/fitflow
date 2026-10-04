@@ -380,78 +380,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _user!.name);
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Profile'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            border: OutlineInputBorder(),
+      builder: (dialogContext) {
+        final navigator = Navigator.of(dialogContext);
+        final messenger = ScaffoldMessenger.of(dialogContext);
+        return AlertDialog(
+          title: const Text('Edit Profile'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Name',
+              border: OutlineInputBorder(),
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              _user!.name = nameController.text;
-              await StorageService.updateUserProfile(_user!);
-              setState(() {});
-              if (mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
+          actions: [
+            TextButton(
+              onPressed: () => navigator.pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                _user!.name = nameController.text;
+                await StorageService.updateUserProfile(_user!);
+                if (!mounted) return;
+                setState(() {});
+                navigator.pop();
+                messenger.showSnackBar(
                   const SnackBar(
                     content: Text('Profile updated!'),
                     backgroundColor: AppTheme.successGreen,
                   ),
                 );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     );
   }
 
   void _showUnitsDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Preferred Units'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: const Text('Kilograms (kg)'),
-              value: 'kg',
-              groupValue: _user!.preferredUnit,
-              onChanged: (value) async {
-                _user!.preferredUnit = value!;
-                await StorageService.updateUserProfile(_user!);
-                setState(() {});
-                if (mounted) Navigator.pop(context);
-              },
+      builder: (dialogContext) {
+        final navigator = Navigator.of(dialogContext);
+        return AlertDialog(
+          title: const Text('Preferred Units'),
+          content: RadioGroup<String>(
+            groupValue: _user!.preferredUnit,
+            onChanged: (value) async {
+              if (value == null) return;
+              _user!.preferredUnit = value;
+              await StorageService.updateUserProfile(_user!);
+              if (!mounted) return;
+              setState(() {});
+              navigator.pop();
+            },
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<String>(
+                  title: Text('Kilograms (kg)'),
+                  value: 'kg',
+                ),
+                RadioListTile<String>(
+                  title: Text('Pounds (lb)'),
+                  value: 'lb',
+                ),
+              ],
             ),
-            RadioListTile<String>(
-              title: const Text('Pounds (lb)'),
-              value: 'lb',
-              groupValue: _user!.preferredUnit,
-              onChanged: (value) async {
-                _user!.preferredUnit = value!;
-                await StorageService.updateUserProfile(_user!);
-                setState(() {});
-                if (mounted) Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
